@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings  # In v1, BaseSettings is in pydantic directly
 from pydantic import validator
 from dotenv import load_dotenv
 
