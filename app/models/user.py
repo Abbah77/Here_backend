@@ -22,7 +22,6 @@ class UserBase(BaseModel):
         return v
 
     class Config:
-        # Pydantic V1/V2 compatibility: allow both 'name' and 'full_name'
         allow_population_by_field_name = True
         populate_by_name = True 
 
@@ -42,11 +41,13 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class UserInDB(BaseModel):
-    """Schema for user as stored in DB (what we return)"""
+    """Schema for user as stored in DB (INTERNAL USE)"""
     id: str
     email: str
     username: str
     full_name: str
+    # FIX: Added this field so SecurityUtils can verify the password!
+    hashed_password: str 
     bio: Optional[str] = None
     profile_pic_url: Optional[str] = None
     is_verified: bool = False
@@ -64,11 +65,24 @@ class UserInDB(BaseModel):
     
     class Config:
         from_attributes = True
-        orm_mode = True
 
-class UserResponse(UserInDB):
-    """User response schema"""
-    pass
+class UserResponse(BaseModel):
+    """User response schema (STRICTLY FOR RETURNING TO FLUTTER)"""
+    # We exclude hashed_password here for security
+    id: str
+    email: str
+    username: str
+    full_name: str
+    bio: Optional[str] = None
+    profile_pic_url: Optional[str] = None
+    is_verified: bool
+    follower_count: int
+    following_count: int
+    post_count: int
+    heat_score: int
+    settings: Dict[str, Any]
+    is_active: bool
+    created_at: datetime
 
 class FollowResponse(BaseModel):
     """Schema for follow relationship"""
@@ -92,10 +106,8 @@ class UserService:
     async def create_user(user_data: UserCreate) -> Optional[UserInDB]:
         """Create a new user in Supabase"""
         try:
-            # Hash password
             hashed_password = SecurityUtils.get_password_hash(user_data.password)
             
-            # Prepare data for insert (using the internal name 'full_name')
             data = {
                 "email": user_data.email,
                 "username": user_data.username,
@@ -110,7 +122,6 @@ class UserService:
                 }
             }
             
-            # Insert into Supabase
             result = supabase.table("users").insert(data).execute()
             
             if result.data and len(result.data) > 0:
@@ -123,7 +134,6 @@ class UserService:
     
     @staticmethod
     async def get_user_by_id(user_id: str) -> Optional[UserInDB]:
-        """Get user by ID"""
         try:
             result = supabase.table("users").select("*").eq("id", user_id).execute()
             if result.data:
@@ -134,18 +144,18 @@ class UserService:
     
     @staticmethod
     async def get_user_by_email(email: str) -> Optional[UserInDB]:
-        """Get user by email"""
         try:
             result = supabase.table("users").select("*").eq("email", email).execute()
             if result.data:
+                # This now includes hashed_password correctly!
                 return UserInDB(**result.data[0])
             return None
-        except Exception:
+        except Exception as e:
+            print(f"Error fetching by email: {e}")
             return None
     
     @staticmethod
     async def get_user_by_username(username: str) -> Optional[UserInDB]:
-        """Get user by username"""
         try:
             result = supabase.table("users").select("*").eq("username", username).execute()
             if result.data:
@@ -156,7 +166,6 @@ class UserService:
     
     @staticmethod
     async def update_user(user_id: str, user_data: UserUpdate) -> Optional[UserInDB]:
-        """Update user"""
         try:
             update_data = user_data.dict(exclude_unset=True)
             if update_data:
@@ -167,24 +176,3 @@ class UserService:
             return None
         except Exception:
             return None
-    
-    @staticmethod
-    async def update_last_login(user_id: str):
-        """Update user's last login time"""
-        try:
-            supabase.table("users").update({
-                "last_login": datetime.utcnow().isoformat()
-            }).eq("id", user_id).execute()
-        except Exception:
-            pass
-    
-    @staticmethod
-    async def search_users(query: str, limit: int = 20) -> List[UserInDB]:
-        """Search users by username or full name"""
-        try:
-            result = supabase.table("users").select("*")\
-                .or_(f"username.ilike.%{query}%,full_name.ilike.%{query}%")\
-                .limit(limit).execute()
-            return [UserInDB(**item) for item in result.data]
-        except Exception:
-            return []
