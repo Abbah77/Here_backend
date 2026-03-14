@@ -8,5 +8,5 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 sqlalchemy==2.0.23
 asyncpg==0.29.0
-pydantic==2.5.3  # Changed from 2.5.0
-pydantic-settings==2.1.0
+pydantic==2.11.5  # Updated to version with pre-compiled wheels
+pydantic-settings==2.8.1  # Updated to match pydantic version
