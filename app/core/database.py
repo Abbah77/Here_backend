@@ -77,31 +77,37 @@ from sqlalchemy.pool import NullPool
 # Extract PostgreSQL URL from Supabase URL
 def get_postgres_url() -> str:
     """Convert Supabase URL to PostgreSQL connection string"""
-    if settings.SUPABASE_URL:
-        # Format: postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
+    if hasattr(settings, 'SUPABASE_POSTGRES_PASSWORD') and settings.SUPABASE_POSTGRES_PASSWORD:
         project_ref = settings.SUPABASE_URL.replace("https://", "").split(".")[0]
-        # You'll need to get your PostgreSQL password from Supabase dashboard
         return f"postgresql://postgres:{settings.SUPABASE_POSTGRES_PASSWORD}@db.{project_ref}.supabase.co:5432/postgres"
-    return settings.DATABASE_URL  # Fallback to original
+    
+    # Try DATABASE_URL as fallback
+    if hasattr(settings, 'DATABASE_URL') and settings.DATABASE_URL:
+        return settings.DATABASE_URL
+    
+    # If neither exists, return None and let SQLAlchemy handle it
+    return None
 
 # Optional: Keep SQLAlchemy if you want to use it alongside Supabase
-if settings.DATABASE_URL or settings.SUPABASE_URL:
+if hasattr(settings, 'DATABASE_URL') and settings.DATABASE_URL or hasattr(settings, 'SUPABASE_POSTGRES_PASSWORD') and settings.SUPABASE_POSTGRES_PASSWORD:
     # Create SQLAlchemy engine (optional)
-    sqlalchemy_engine = create_engine(
-        get_postgres_url() if settings.SUPABASE_URL else settings.DATABASE_URL,
-        pool_pre_ping=True,
-        pool_size=20,
-        max_overflow=0,
-        echo=settings.DEBUG
-    )
-    
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sqlalchemy_engine)
-    Base = declarative_base()
-    
-    def get_sqlalchemy_db() -> Generator[Session, None, None]:
-        """Optional: Keep SQLAlchemy session if needed"""
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
+    db_url = get_postgres_url()
+    if db_url:
+        sqlalchemy_engine = create_engine(
+            db_url,
+            pool_pre_ping=True,
+            pool_size=20,
+            max_overflow=0,
+            echo=settings.DEBUG
+        )
+        
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sqlalchemy_engine)
+        Base = declarative_base()
+        
+        def get_sqlalchemy_db() -> Generator[Session, None, None]:
+            """Optional: Keep SQLAlchemy session if needed"""
+            db = SessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
