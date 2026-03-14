@@ -1,0 +1,64 @@
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database - Supabase (replaces SQLAlchemy/asyncpg)
+supabase==2.0.3
+# Keep SQLAlchemy if you want ORM (optional)
+sqlalchemy==2.0.23
+alembic==1.12.1
+asyncpg==0.29.0
+redis==5.0.1
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Real-time (Supabase Realtime replaces websockets)
+# websockets==12.0  # Optional - keep if needed
+
+# File Upload - Supabase Storage replaces boto3
+Pillow==10.1.0  # Image processing
+python-magic==0.4.27
+python-magic-bin==0.4.14  # For Windows
+filetype==1.2.0
+
+# Optional: Keep AWS if you want hybrid storage
+boto3==1.34.0
+aioboto3==12.3.0
+
+# AI/ML - Optimized for Hugging Face Spaces
+numpy==1.26.2
+pandas==2.1.3
+scikit-learn==1.3.2
+scipy==1.11.4
+joblib==1.3.2
+# TensorFlow optional - remove if not needed
+# tensorflow==2.14.0
+
+# Hugging Face integration (for AI features)
+huggingface-hub==0.20.3
+transformers==4.36.2  # For advanced AI models
+torch==2.1.2  # Required for transformers
+
+# Utilities
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+uuid==1.30
+email-validator==2.1.0
+
+# CORS
+fastapi-cors==0.0.6
+
+# Logging
+python-json-logger==2.0.7
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1
+
+# Video Processing (optional)
+ffmpeg-python==0.2.0
