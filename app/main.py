@@ -6,7 +6,7 @@ from datetime import datetime
 
 from .core.config import settings
 from .core.websocket_manager import manager
-from .api.endpoints import auth, message, feed, media, websocket
+from .api.endpoints import auth, message, feed, media, websocket, stories
 from .core.database import check_supabase_connection  # Import health check
 
 # Configure logging - THIS MUST BE AT THE TOP
@@ -42,6 +42,8 @@ app.include_router(message.router, prefix=api_prefix)
 app.include_router(feed.router, prefix=api_prefix)
 app.include_router(media.router, prefix=api_prefix)
 app.include_router(websocket.router)  # WebSocket router has no prefix
+app.include_router(stories.router, prefix=api_prefix) # Add this line
+
 
 # Health check
 @app.get("/health")
